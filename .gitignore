@@ -1,0 +1,10 @@
+# Local build and runtime artifacts
+*.user
+*.suo
+bin/
+obj/
+*.log
+
+# Keep packaged releases under outputs, but never commit local credentials/config.
+config.json
+credentials.json
