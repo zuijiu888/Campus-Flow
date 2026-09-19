@@ -42,18 +42,18 @@ public sealed class PortalSettings
         return new PortalSettings
         {
             PortalUrl = "http://211.143.60.126:8888/showLogin.do?wlanuserip={local_ip}&wlanacname=0042.0317.311.00",
-            SubmitUrl = "http://211.143.60.126:8888/login.do",
+            SubmitUrl = "http://211.143.60.126:8888/login.do?wlanuserip={local_ip}&wlanacname=0042.0317.311.00",
             Method = "POST",
             UsernameField = "bpssUSERNAME",
             PasswordField = "bpssBUSPWD",
-            ExtraFields = "showVerify=false\r\nloginType=1",
+            ExtraFields = "showVerify=false\r\nloginType=1\r\nwlanuserip={local_ip}\r\nwlanacname=0042.0317.311.00",
             ConnectivityUrl = "http://www.msftconnecttest.com/connecttest.txt",
             ConnectivityExpected = "Microsoft Connect Test",
             SuccessKeywords = "登录成功|您已成功登录",
             CheckIntervalSeconds = 60,
-            DiscoverRedirect = true,
+            DiscoverRedirect = false,
             NightMode = true,
-            AutoDetect = true
+            AutoDetect = false
         };
     }
 }
@@ -81,7 +81,16 @@ static class AppData
                 {
                     var settings = (PortalSettings)new XmlSerializer(typeof(PortalSettings)).Deserialize(reader);
                     if (!xml.Contains("<NightMode>")) settings.NightMode = true;
-                    if (!xml.Contains("<AutoDetect>")) settings.AutoDetect = true;
+                    // 迁移早期版本的移动模板：避免依赖 msftconnecttest 重定向，直接访问校园网门户。
+                    if (String.Equals(settings.SubmitUrl, "http://211.143.60.126:8888/login.do", StringComparison.OrdinalIgnoreCase))
+                    {
+                        settings.SubmitUrl = PortalSettings.ChinaMobileTemplate().SubmitUrl;
+                        settings.ExtraFields = PortalSettings.ChinaMobileTemplate().ExtraFields;
+                        settings.DiscoverRedirect = false;
+                        settings.AutoDetect = false;
+                        SaveSettings(settings);
+                    }
+                    if (!xml.Contains("<AutoDetect>")) settings.AutoDetect = false;
                     return settings;
                 }
             }
@@ -253,6 +262,13 @@ static class PortalClient
             }
             AppData.Log("认证请求已提交，但未确认联网。请检查字段、验证码或终端限制。");
             return "已提交，但未确认联网";
+        }
+        catch (WebException ex)
+        {
+            var http = ex.Response as HttpWebResponse;
+            string status = http == null ? ex.Status.ToString() : ((int)http.StatusCode) + " " + http.StatusDescription;
+            AppData.Log("认证请求失败：" + status + "。请检查登录地址、字段和校园网门户状态。");
+            return "认证失败：服务器返回 " + status;
         }
         catch (Exception ex)
         {

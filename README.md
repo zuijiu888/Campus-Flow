@@ -21,3 +21,25 @@ cpu占用率几乎为零,同时也可减少后台运行,让程序只有在网络
 Set-Location .\work
 powershell -ExecutionPolicy Bypass -File .\Build-CampusAutoLogin.ps1
 ```
+版本：1314.5.2.0
+
+## 普通用户使用
+
+普通用户不需要安装 Visual Studio、C# 编译器或任何开发工具。下载 `outputs/CampusFlow-v1314.5.2.0-win-x64.zip`，解压后直接运行 `CampusFlow.exe`，在基础设置中填写校园网账号和密码即可。
+
+程序默认使用校园网门户直连模式：会自动读取当前电脑的内网 IPv4 地址替换 `{local_ip}`，不依赖 Windows 的 `msftconnecttest.com` 跳转。Windows 需要先在 Wi‑Fi 设置中勾选“在信号范围内自动连接”对应校园网。
+
+## 开发者构建
+
+开发者也不需要额外安装编译器。Windows 11 通常自带 .NET Framework C# 编译器；运行 `work/Build-CampusAutoLogin.ps1` 即可生成 `outputs/CampusFlow.exe`。如果系统没有该编译器，可将 .NET Framework Developer Pack 安装到任意磁盘（例如 D 盘），普通用户仍只需运行已打包的 EXE。
+
+## 更新日志
+
+### 1314.5.2.0
+
+- 默认改为直接访问校园网门户，不再依赖 Windows 的 `msftconnecttest.com` 重定向。
+- 移动校园网模板的登录页和提交地址自动携带 `{local_ip}`、`wlanacname` 参数。
+- 兼容旧版本设置文件，首次启动时自动迁移旧的固定 `/login.do` 地址。
+- 认证失败时记录 HTTP 状态码（例如 500），但不记录账号和密码。
+- 网络认证成功后停止定时轮询，断网或网络地址变化时再自动唤醒。
+- 普通用户无需安装编译器，解压发布包后直接运行 `CampusFlow.exe`。
